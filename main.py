@@ -10,6 +10,8 @@ import textwrap
 import zipfile
 import rarfile  # type: ignore
 import platform
+import pickle
+from PyQt6.QtCore import QByteArray, QBuffer, QIODevice  # type: ignore
 from deep_translator import GoogleTranslator  # type: ignore
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -235,7 +237,7 @@ class SettingsDialog(QDialog):
         form.addRow("Hizalama:", self.combo_align)
         layout.addLayout(form)
 
-        lbl_dev = QLabel('Geliştirici: <a href="https://github.com/Sefflex" style="color: #3498db; text-decoration: none;">Sefflex</a> | v0.5')
+        lbl_dev = QLabel('Geliştirici: <a href="https://github.com/Sefflex" style="color: #3498db; text-decoration: none;">Sefflex</a> | v0.7')
         lbl_dev.setOpenExternalLinks(True)
         lbl_dev.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(lbl_dev)
@@ -537,8 +539,17 @@ class CizgiArsivApp(QMainWindow):
         main_layout = QVBoxLayout(central)
 
         tb = QHBoxLayout()
-        btn_load = QPushButton("📂 Dosya Yükle")
+        btn_load = QPushButton("🖼️ Resim/CBR Yükle")
         btn_load.clicked.connect(self.load_files)
+        
+        btn_load_proj = QPushButton("📥 Proje Aç")
+        btn_load_proj.setStyleSheet("background-color: #8e44ad; color: white; font-weight: bold;")
+        btn_load_proj.clicked.connect(self.load_project)
+        
+        btn_save_proj = QPushButton("📤 Proje Kaydet")
+        btn_save_proj.setStyleSheet("background-color: #2980b9; color: white; font-weight: bold;")
+        btn_save_proj.clicked.connect(self.save_project)
+
         btn_analyze = QPushButton("🚀 Sayfayı Tam Otonom Çıkart")
         btn_analyze.setStyleSheet("background-color: #d35400; color: white; font-weight: bold; padding: 6px 12px;")
         btn_analyze.clicked.connect(self.run_auto_scanlation)
@@ -579,7 +590,7 @@ class CizgiArsivApp(QMainWindow):
         self.lbl_current_color.setFixedSize(20, 20)
         self.lbl_current_color.setStyleSheet("background-color: #ffffff; border: 1px solid gray;")
 
-        tb.addWidget(btn_load); tb.addWidget(btn_analyze); tb.addWidget(self.btn_reset); tb.addWidget(self.btn_add_text); tb.addWidget(self.btn_toggle); tb.addWidget(btn_export);
+        tb.addWidget(btn_load); tb.addWidget(btn_load_proj); tb.addWidget(btn_save_proj); tb.addWidget(btn_analyze); tb.addWidget(self.btn_reset); tb.addWidget(self.btn_add_text); tb.addWidget(self.btn_toggle); tb.addWidget(btn_export);
         tb.addWidget(QLabel(" | ")); tb.addWidget(self.btn_paint); tb.addWidget(self.btn_fill); tb.addWidget(self.btn_picker); tb.addWidget(QLabel("Boyut:")); tb.addWidget(self.spin_brush); tb.addWidget(self.lbl_current_color)
         tb.addStretch(); tb.addWidget(btn_settings)
         main_layout.addLayout(tb)
@@ -646,6 +657,11 @@ class CizgiArsivApp(QMainWindow):
         right_lay.addWidget(QLabel("Orijinal İbare (Değiştirilebilir):")); right_lay.addWidget(self.txt_original)
         right_lay.addWidget(QLabel("Çeviri İçeriği (Anlık Değişir):")); right_lay.addWidget(self.txt_translated)
         right_lay.addLayout(form_r)
+
+        self.btn_save_preset = QPushButton("💾 Ön Ayar Kaydet")
+        self.btn_save_preset.setStyleSheet("background-color: #8e44ad; color: white; font-weight: bold;")
+        self.btn_save_preset.clicked.connect(self.save_text_preset)
+        right_lay.addWidget(self.btn_save_preset)
 
         btn_tr = QPushButton("⭐ Sadece Metni Çevir (Seçili Kutu)")
         btn_tr.setStyleSheet("background-color: #1e67b2; color: #ffffff;")
@@ -748,6 +764,130 @@ class CizgiArsivApp(QMainWindow):
         self.page_list.addItem(item)
         if len(self.pages) == 1: self.on_page_selected(item)
 
+    def get_pixmap_bytes(self, qpix: QPixmap) -> bytes:
+        ba = QByteArray()
+        buf = QBuffer(ba)
+        buf.open(QIODevice.OpenModeFlag.WriteOnly)
+        qpix.save(buf, "PNG")
+        return ba.data() # type: ignore
+
+    def bytes_to_pixmap(self, data: bytes) -> QPixmap:
+        qpix = QPixmap()
+        qpix.loadFromData(data, "PNG")
+        return qpix
+
+    def save_project(self):
+        if not self.pages: return
+        path, _ = QFileDialog.getSaveFileName(self, "Projeyi Kaydet", "Calisma_1.comicproj", "ComicEditör Projesi (*.comicproj)")
+        if not path: return
+        
+        self.progress_dialog = QProgressDialog("Proje Paketleniyor...", "İptal", 0, 0, self)
+        dlg = self.progress_dialog
+        if dlg: dlg.show()
+        QApplication.processEvents()
+        
+        pages_list = []
+        
+        for page in self.pages:
+            nodes_list = []
+            for item in page["scene"].items():
+                if isinstance(item, DraggableTextNode):
+                    node_data = {
+                        "rect_data": item.rect_data,
+                        "is_auto": item.is_auto,
+                        "font_size": item.font_size,
+                        "box_w": item.box_w,
+                        "box_h": item.box_h,
+                        "align": item.align,
+                        "is_bold": item.is_bold,
+                        "has_stroke": getattr(item, 'has_stroke', True),
+                        "text_color": item.text_color,
+                        "stroke_color": item.stroke_color,
+                        "pos_x": item.pos().x(),
+                        "pos_y": item.pos().y(),
+                    }
+                    nodes_list.append(node_data)
+                    
+            p_data = {
+                "title": page["title"],
+                "qpix": self.get_pixmap_bytes(page["qpix"]),
+                "clean_qpix": self.get_pixmap_bytes(page.get("clean_qpix", page["qpix"])),
+                "nodes": nodes_list
+            }
+            pages_list.append(p_data)
+            
+        project_data = {"pages": pages_list, "settings": self.settings}
+        
+        try:
+            with open(path, 'wb') as f:
+                pickle.dump(project_data, f)
+            if dlg: dlg.close()
+            QMessageBox.information(self, "Başarılı", "Proje başarıyla kaydedildi! İleride 'Proje Aç' diyerek kaldığınız yerden devam edebilirsiniz.")
+        except Exception as e:
+            if dlg: dlg.close()
+            QMessageBox.critical(self, "Hata", f"Proje kaydedilemedi: {e}")
+
+    def load_project(self):
+        path, _ = QFileDialog.getOpenFileName(self, "Proje Aç", "", "ComicEditör Projesi (*.comicproj)")
+        if not path: return
+        
+        self.progress_dialog = QProgressDialog("Proje Yükleniyor...", "İptal", 0, 0, self)
+        dlg = self.progress_dialog
+        if dlg: dlg.show()
+        QApplication.processEvents()
+        
+        try:
+            with open(path, 'rb') as f:
+                project_data = pickle.load(f)
+                
+            self.settings = project_data.get("settings", self.settings)
+            self.pages.clear()
+            self.page_list.clear()
+            self.active_node = None
+            self.clear_right_panel()
+            
+            fpath = get_font_path(str(self.settings.get("font", "Patrick Hand")))
+            
+            for p_data in project_data.get("pages", []):
+                qpix = self.bytes_to_pixmap(p_data["qpix"])
+                clean_qpix = self.bytes_to_pixmap(p_data["clean_qpix"])
+                
+                scene = QGraphicsScene()
+                scene.setSceneRect(QRectF(qpix.rect()))
+                bg = QGraphicsPixmapItem(clean_qpix)
+                bg.setZValue(-100)
+                scene.addItem(bg)
+                
+                page_dict = {"qpix": qpix, "scene": scene, "title": p_data["title"], "bg_item": bg, "clean_qpix": clean_qpix, "undo_stack": []}
+                self.pages.append(page_dict)
+                
+                thumb = qpix.scaled(100, 150, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+                item = QListWidgetItem(QIcon(thumb), p_data["title"])
+                item.setData(Qt.ItemDataRole.UserRole, len(self.pages) - 1)
+                self.page_list.addItem(item)
+                
+                for nd in p_data.get("nodes", []):
+                    node = DraggableTextNode(nd["rect_data"], self, nd["font_size"], fpath, nd["align"], nd["is_auto"])
+                    node.box_w = nd["box_w"]
+                    node.box_h = nd["box_h"]
+                    node.is_bold = nd["is_bold"]
+                    node.has_stroke = nd.get("has_stroke", True)
+                    node.text_color = nd["text_color"]
+                    node.stroke_color = nd["stroke_color"]
+                    node._initialized = True
+                    node.setPos(nd["pos_x"], nd["pos_y"])
+                    node.update_visual()
+                    scene.addItem(node)
+                    
+            if len(self.pages) > 0:
+                self.on_page_selected(self.page_list.item(0))
+                
+            if dlg: dlg.close()
+            QMessageBox.information(self, "Başarılı", "Proje başarıyla yüklendi. Nerede kaldıysak oradan devam!")
+        except Exception as e:
+            if dlg: dlg.close()
+            QMessageBox.critical(self, "Hata", f"Proje dosyası okunamadı veya bozuk: {e}")
+
     def on_page_selected(self, item):
         self.current_page_idx = int(item.data(Qt.ItemDataRole.UserRole))
         scene = self.pages[self.current_page_idx]["scene"]
@@ -800,6 +940,8 @@ class CizgiArsivApp(QMainWindow):
         if node is None: return
         node.original_text = self.txt_original.toPlainText()
         node.translated_text = self.txt_translated.toPlainText()
+        node.rect_data["text"] = node.original_text
+        node.rect_data["translated_text"] = node.translated_text
         node.is_auto = False
         node.font_size = self.spin_size.value()
         node.box_w = self.slider_width.value()
@@ -807,6 +949,18 @@ class CizgiArsivApp(QMainWindow):
         node.is_bold = self.chk_bold.isChecked()
         node.has_stroke = self.chk_stroke.isChecked()
         node.update_visual()
+
+    def save_text_preset(self):
+        node = self.active_node
+        if node is None: return
+        self.settings["preset"] = {
+            "font_size": node.font_size,
+            "text_color": node.text_color,
+            "stroke_color": node.stroke_color,
+            "is_bold": node.is_bold,
+            "has_stroke": getattr(node, 'has_stroke', True)
+        }
+        QMessageBox.information(self, "Ön Ayar Kaydedildi", "Yeni eklenecek yazılar ve OCR okumaları artık bu boyutta, bu renkte ve bu formatta çıkacak!")
 
     def toggle_original_view(self):
         if self.current_page_idx == -1: return
@@ -845,6 +999,15 @@ class CizgiArsivApp(QMainWindow):
         align_pil = "center" if align_str == "orta" else "right" if align_str == "sağ" else "left"
 
         node = DraggableTextNode(rect_data, self, global_font, fpath, align_pil, is_auto=False)
+        if "preset" in self.settings:
+            pr = self.settings["preset"]
+            node.font_size = pr["font_size"]
+            node.text_color = pr["text_color"]
+            node.stroke_color = pr["stroke_color"]
+            node.is_bold = pr["is_bold"]
+            node.has_stroke = pr["has_stroke"]
+            node.update_visual()
+
         scene.addItem(node)
         scene.clearSelection()
         node.setSelected(True)
@@ -894,6 +1057,15 @@ class CizgiArsivApp(QMainWindow):
         align_pil = "center" if align_str == "orta" else "right" if align_str == "sağ" else "left"
 
         node = DraggableTextNode(rect_data, self, global_font, fpath, align_pil, is_auto=False)
+        if "preset" in self.settings:
+            pr = self.settings["preset"]
+            node.font_size = pr["font_size"]
+            node.text_color = pr["text_color"]
+            node.stroke_color = pr["stroke_color"]
+            node.is_bold = pr["is_bold"]
+            node.has_stroke = pr["has_stroke"]
+            node.update_visual()
+
         page["scene"].addItem(node)
         page["scene"].clearSelection()
         node.setSelected(True)
