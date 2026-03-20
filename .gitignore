@@ -1,0 +1,13 @@
+venv/
+__pycache__/
+*.pyc
+.DS_Store
+.idea/
+.vscode/
+*.cbz
+*.cbr
+*.pdf
+*.zip
+*.rar
+tmp/
+.vscode

@@ -1,0 +1,11 @@
+PyQt6
+opencv-python
+Pillow
+easyocr
+pytesseract
+google-generativeai
+pdf2image
+PyMuPDF
+numpy
+deep-translator
+rarfile
