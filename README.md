@@ -7,6 +7,13 @@ Kendi çizgi roman arşiv sitemdeki (*cizgiarsiv.com*) devasa iş yükünü hafi
 
 ---
 
+## 🚀 Görseller
+<img width="1562" height="990" alt="Ekran Resmi 2026-03-20 03 36 01" src="https://github.com/user-attachments/assets/ea633bf5-5cc9-4713-95eb-7b62a8a6da4e" />
+<img width="1562" height="990" alt="Ekran Resmi 2026-03-20 03 34 25" src="https://github.com/user-attachments/assets/8dd1e056-efde-4440-8399-676a987f4774" />
+<img width="1512" height="990" alt="Ekran Resmi 2026-03-20 00 03 03" src="https://github.com/user-attachments/assets/6de29e00-0809-45c6-8a60-5c61637abda4" />
+
+---
+
 ## 🚀 Özellikler ve Araçların Kullanımı
 
 ComicEditör, en zorlu Manga / Çizgi Roman temizlik (cleaning) işlemlerini çocuk oyuncağına çeviren güçlü araç kitleriyle gelir. İşte programda bulunan tüm butonların ve fonksiyonların detaylı çalışma rehberi:
@@ -75,3 +82,5 @@ Ekranda otomatik çevrilen herhangi bir yazı kutusuna tıkladığınızda, panz
 - **Sürüm:** v0.5
 
 Uygulamanın OCR tarama hassasiyeti ve inpaint modülleri PyQt6 & C++ opencv kütüphaneleriyle optimize edilerek hazırlanmıştır. Sürüm yükseltmek, Pull Request atmak veya hataları (Issues) bildirmek için Github repomu kullanabilirsiniz. Çizgi roman okuyucularınızın şerefine...
+
+NOT: UYGULAMA ÇOK YENİ OLDUĞU İÇİN BAZI HATA VE EKSİKLİKLER OLABİLİR. BUNLARI BANA BİLDİRİRSENİZ SEVİNİRİM. MACOS İÇİN TAM TEST EDİLMİŞTİR. İLERLEYEN SÜRÜMLERDE WINDOWS İÇİN STABİL HALE GETİRİLECEKTİR.
