@@ -3,7 +3,7 @@
 **ComicEditör**, çeviri siteleri (scanlation) ve çizgi roman toplulukları için süreçleri ışık hızına çıkarmak amacıyla özel olarak geliştirdiğim tam kapsamlı, yapay zeka destekli otonom bir dizgi aracıdır. OCR (Optik Karakter Tanıma), pürüzsüz inpainting (arka plan silme) ve interaktif özel tuval özellikleriyle donatılmış bu program; Photoshop başında saatler süren manuel silme, yazma ve ortalama işlemlerini tek tıkla saniyelere indirmek için kodlanmıştır.
 
 ## 🎯 Geliştirme Amacım
-Kendi çizgi roman çeviri sitemdeki (*cizgiarsiv.com*) devasa iş yükünü hafifletmek ve çevirmen arkadaşlarıma "yapay zekalı bir asistan" sunmak için bu projeye başladım. İngilizce, Japonca veya Korece serilerde çevirmeni ve editörü iki ayrı rol olmaktan çıkarıp, tek bir kişinin aynı anda hem çeviri edip hem de balonları saniyeler içinde dizebilmesi temel vizyonumdu.
+Kendi çizgi roman arşiv sitemdeki (*cizgiarsiv.com*) devasa iş yükünü hafifletmek ve çevirmen arkadaşlarıma "yapay zekalı bir asistan" sunmak için bu projeye başladım. İngilizce, Japonca veya Korece serilerde çevirmeni ve editörü iki ayrı rol olmaktan çıkarıp, tek bir kişinin aynı anda hem çeviri edip hem de balonları saniyeler içinde dizebilmesi temel vizyonumdu.
 
 ---
 
