@@ -61,7 +61,7 @@ Ekranda otomatik çevrilen herhangi bir yazı kutusuna tıkladığınızda, panz
 1. Repoyu bilgisayarınıza indirin veya terminal aracılığıyla klonlayın:
    ```bash
    git clone https://github.com/Sefflex/ComicEditor.git
-   cd comictranslate
+   cd ComicEditör
    ```
 2. Temiz çalışma alanı (virtual environment) kurun:
    ```bash
