@@ -17,9 +17,9 @@ Kendi çizgi roman arşiv sitemdeki (*cizgiarsiv.com*) devasa iş yükünü hafi
 ComicEditör, en zorlu Manga / Çizgi Roman temizlik (cleaning) işlemlerini çocuk oyuncağına çeviren güçlü araç kitleriyle gelir. İşte programda bulunan tüm butonların ve fonksiyonların detaylı çalışma rehberi:
 
 ### Üst Menü İşlevleri
-*   **▶️ 📥 Proje Aç & 📤 Proje Kaydet:** Çalışmanızı (çeviriler, fırça çizimleri ve konumlar) anlık olarak `.comicproj` dosyası olarak kaydedip, yarım bıraktıktan sonra tek tıkla tam olarak aynı düzende kaldığınız yerden devam etmenizi sağlayan otonom **Hafıza (Save/Load) Mekanizması!**
+*   **▶️ 📥 Proje Aç & 📤 Proje Kaydet:** Çalışmanızı (çeviriler, fırça çizimleri ve konumlar) anlık olarak `.comicproj` dosyası olarak kaydedip, yarım bıraktıktan sonra tek tıkla **pikseli pikseline aynı hizalamalarla** kaldığınız yerden devam etmenizi sağlayan tam otonom **Hafıza (Save/Load) Mekanizması!** *(Geri yükleme sırasında yazıların kayması/zıplaması %100 düzeltilmiştir.)*
 *   **📂 Resim/CBR Yükle:** Bilgisayarınızdaki resimleri (PNG, JPG), PDF dosyalarını ve webtoon formatındaki sıkıştırılmış `CBR` / `CBZ` çizgi roman arşivlerini programa aktarır. Sayfaları deşifre edip sol panele dizer.
-*   **🚀 Sayfayı Tam Otonom Çıkart:** **(Efsane Özellik)** Üzerinde çalıştığınız sayfanın yapay zeka tarafından taranmasını başlatır. Sayfadaki tüm balonları, yabancı yazıları ve sfx efektlerini tespit eder; yerlerinden orijinal dokuya asla zarar vermeden (Telea algoritmasıyla) *siler*. Hemen ardından metni Gemini ile Türkçeye çevirip, eski yazının olduğu yere **şeffaf, otonom bir balon** içinde mükemmel boyutta hizalayarak yerleştirir.
+*   **🚀 Sayfayı Tam Otonom Çıkart:** **(Efsane Özellik)** Üzerinde çalıştığınız sayfanın yapay zeka tarafından taranmasını başlatır. Sayfadaki metinleri tespit eder ve **orijinal dokuya asla zarar vermeden, siyah balon çizgilerine taşmayan** özel bir Telea maskelemesiyle pürüzsüzce siler! Metni Türkçeye çevirerek yeni boşluğun tam ortasına mükemmel formatta ekler.
 *   **🔄 Sayfayı Sıfırla:** Fırçayla yanlış boyamalar yaptınız, balonlar karıştı ya da sayfa perişan mı oldu? Hiç dert değil. Buna tıkladığınız an sistem size "Emin misiniz?" diye sorar; evet derseniz o sayfadaki bütün işleri tarihe gömer ve sayfaya ilk yüklendiği o tertemiz, ham halini geri yükler.
 *   **➕ Yazı Kutusu Ekle:** Ekrana yapay zeka harici, sizin manuel büyütebileceğiniz bir metin kutusu fırlatır. Unutulmuş balonlar veya sayfa kenarı notları için idealdir.
 *   **👁️ Orijinali Gör:** Çevirinizin doğruluğunu teyit etmek için bu butona basılı tuttuğunuzda; o an çalıştığınız sayfanın tüm çevirilerini, yaptığınız tüm boyama ve sansür işlemlerini **gizler** ve size sadece 1 saniyeliğine *eski İngilizce sayfayı* gösterir. Bıraktığınızda çevirili dünyaya geri dönersiniz.
@@ -37,7 +37,7 @@ ComicEditör, en zorlu Manga / Çizgi Roman temizlik (cleaning) işlemlerini ço
 Ekranda otomatik çevrilen herhangi bir yazı kutusuna tıkladığınızda, panzehir sağ panel devreye girer.
 *   **Orijinal İbare & Çeviri İçeriği:** Kutudaki orijinal yabancı metni gösterir. Alttaki kutudan da tamanlı Türkçesini görüp istediğiniz gibi değiştirebilir, silebilir veya alt satıra geçirebilirsiniz. Değişiklik *anında* ekranda güncellenir.
 *   **Yazı Rengi & Dış Çizgi (Stroke) Renkleri:** Metne ve şeffaf konturuna istediğiniz rengi verebilirsiniz.
-*   **💾 Ön Ayar Kaydet:** Bir çeviri balonunun rengini, büyüklüğünü ve stilini hazırladıktan sonra bu butona basarsanız tasarımı şablon olarak kilitler. Bundan sonra oluşturacağınız tüm manuel kutular (veya OCR okumaları) doğrudan **bu formatla (%100 aynı)** fırlatılır. Her defasında font ayarlama derdine son verir!
+*   **💾 Ön Ayar Kaydet:** Bir çeviri balonunun rengini, büyüklüğünü, yazı stilini ve **artık o an ayarladığınız Kutu Ebatarını (Genişlik/Yükseklik)** kaydedebilen bu butona bastığınızda tasarımı şablon olarak kilitler! Bundan sonraki tüm yeni kutular (%100 aynı ebat ve tasarımda) yollanır.
 *   **Göster (Dış Çizgi Checkbox):** Seçtiğiniz beyaz/siyah dış çizgiyi balonun etrafından kapatıp açar. Beyaz balonlarda dış konturu kapatmak manga sitelerinde çok daha estetik bir görüntü yaratır.
 *   **Stil, Font Boyutu, Kutu Genişliği, Kutu Yüksekliği:** Balon çok mu taştı? Yazı çok mu küçük kaldı? Hemen bu kaydırıcılardan (slider) birini çekerek santimi santimine harika ayarlamalar yapabilirsiniz.
 *   **⭐ Sadece Metni Çevir (Seçili Kutu):** Orijinal metni elinizle yanlışları düzelterek yazdıktan sonra bu butona basarsanız, yalnızca o cümleyi yapay zeka ile çevirip o kutunun içine hapseder.
@@ -54,7 +54,7 @@ Ekranda otomatik çevrilen herhangi bir yazı kutusuna tıkladığınızda, panz
 
 ### Gereksinimler
 - Python 3.10 veya üzeri
-- macOS (Intel & ARM Destekli - Unrar Gömülü) ya da Windows/Linux
+- macOS (Intel & ARM) ve **Windows Destekli** *(CBR/CBZ okumak için Winrar yüklemenize gerek yoktur, uygulamanın içerisine Windows uyumlu gelişmiş UnRAR aracı yerleştirilmiştir).*
 - Sorunsuz bir yapay zeka taraması için internet bağlantısı
 
 ### Kurulum Test Süreci
@@ -79,7 +79,7 @@ Ekranda otomatik çevrilen herhangi bir yazı kutusuna tıkladığınızda, panz
 
 ## 👨‍💻 Geliştirici & Lisans
 - **Geliştirici:** [Sefflex](https://github.com/Sefflex)
-- **Sürüm:** v0.7
+- **Sürüm:** v0.8
 
 Uygulamanın OCR tarama hassasiyeti ve inpaint modülleri PyQt6 & C++ opencv kütüphaneleriyle optimize edilerek hazırlanmıştır. Sürüm yükseltmek, Pull Request atmak veya hataları (Issues) bildirmek için Github repomu kullanabilirsiniz. Çizgi roman okuyucularınızın şerefine...
 

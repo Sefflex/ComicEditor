@@ -21,6 +21,8 @@ if platform.system() == "Darwin":
         rarfile.UNRAR_TOOL = os.path.join(base_dir, "unrar_mac_arm", "unrar")
     else:
         rarfile.UNRAR_TOOL = os.path.join(base_dir, "unrar_mac_intel", "unrar")
+elif platform.system() == "Windows":
+    rarfile.UNRAR_TOOL = os.path.join(base_dir, "unrar_windows", "unrar.exe")
 
 try:
     _create_unverified_https_context = ssl._create_unverified_context
@@ -279,14 +281,14 @@ class AutoScanlationThread(QThread):
             w, h_box = int(max(x_coords) - x), int(max(y_coords) - y)
             results.append({"rect": (x, y, w, h_box), "text": text})
 
-            pad = 12
+            pad = 2
             x1, y1 = max(0, x - pad), max(0, y - pad)
             x2, y2 = min(w_img, x + w + pad), min(h_img, y + h_box + pad)
             crop = img_bgr[y1:y2, x1:x2]
             gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
             box_mask = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 15, 6)
 
-            kernel_local = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+            kernel_local = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
             box_mask = cv2.dilate(box_mask, kernel_local, iterations=1)
 
             full_mask[y1:y2, x1:x2] = cv2.bitwise_or(full_mask[y1:y2, x1:x2], box_mask)
@@ -296,10 +298,10 @@ class AutoScanlationThread(QThread):
             return
 
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-        full_mask = cv2.dilate(full_mask, kernel, iterations=2)
+        full_mask = cv2.dilate(full_mask, kernel, iterations=1)
 
         self.progress.emit("Tüm orijinal metinler tek seferde pürüzsüzce siliniyor...")
-        cleaned_bgr = cv2.inpaint(img_bgr, full_mask, 7, cv2.INPAINT_TELEA)
+        cleaned_bgr = cv2.inpaint(img_bgr, full_mask, 4, cv2.INPAINT_TELEA)
 
         self.progress.emit("Yapay Zeka (AI) Çeviri İşlemi Devrede...")
         engine = str(self.settings.get("engine", "Otomatik (Gemini > Google)"))
@@ -875,8 +877,8 @@ class CizgiArsivApp(QMainWindow):
                     node.text_color = nd["text_color"]
                     node.stroke_color = nd["stroke_color"]
                     node._initialized = True
-                    node.setPos(nd["pos_x"], nd["pos_y"])
                     node.update_visual()
+                    node.setPos(nd["pos_x"], nd["pos_y"])
                     scene.addItem(node)
                     
             if len(self.pages) > 0:
@@ -958,7 +960,9 @@ class CizgiArsivApp(QMainWindow):
             "text_color": node.text_color,
             "stroke_color": node.stroke_color,
             "is_bold": node.is_bold,
-            "has_stroke": getattr(node, 'has_stroke', True)
+            "has_stroke": getattr(node, 'has_stroke', True),
+            "box_w": node.box_w,
+            "box_h": node.box_h
         }
         QMessageBox.information(self, "Ön Ayar Kaydedildi", "Yeni eklenecek yazılar ve OCR okumaları artık bu boyutta, bu renkte ve bu formatta çıkacak!")
 
@@ -1006,6 +1010,10 @@ class CizgiArsivApp(QMainWindow):
             node.stroke_color = pr["stroke_color"]
             node.is_bold = pr["is_bold"]
             node.has_stroke = pr["has_stroke"]
+            if "box_w" in pr:
+                node.box_w = pr["box_w"]
+            if "box_h" in pr:
+                node.box_h = pr["box_h"]
             node.update_visual()
 
         scene.addItem(node)
@@ -1064,6 +1072,10 @@ class CizgiArsivApp(QMainWindow):
             node.stroke_color = pr["stroke_color"]
             node.is_bold = pr["is_bold"]
             node.has_stroke = pr["has_stroke"]
+            if "box_w" in pr:
+                node.box_w = pr["box_w"]
+            if "box_h" in pr:
+                node.box_h = pr["box_h"]
             node.update_visual()
 
         page["scene"].addItem(node)
