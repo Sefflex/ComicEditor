@@ -36,7 +36,8 @@ from PyQt6.QtWidgets import (  # type: ignore
     QSplitter, QListWidget, QLabel, QPushButton, QTextEdit,
     QComboBox, QSpinBox, QFormLayout, QFrame, QFileDialog, QGraphicsView,
     QGraphicsScene, QGraphicsPixmapItem, QGraphicsItem, QListWidgetItem,
-    QProgressDialog, QMessageBox, QLineEdit, QDialog, QDialogButtonBox, QSlider, QCheckBox, QColorDialog
+    QProgressDialog, QMessageBox, QLineEdit, QDialog, QDialogButtonBox,
+    QSlider, QCheckBox, QColorDialog, QScrollArea
 )
 from PyQt6.QtGui import QPixmap, QImage, QPainter, QIcon, QPen, QColor, QBrush  # type: ignore
 from PyQt6.QtCore import Qt, QSize, QRectF, QThread, pyqtSignal  # type: ignore
@@ -213,6 +214,38 @@ class DraggableTextNode(QGraphicsPixmapItem):
             if self.isSelected(): self.main_app.on_node_selected(self)
         return super().itemChange(change, value)
 
+class CollapsibleSection(QWidget):
+    """Açılır/kapanır modüler panel bölümü (Photoshop tarzı)"""
+    def __init__(self, title, parent=None):
+        super().__init__(parent)
+        self._is_collapsed = False
+        self._title = title
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(0)
+        self.toggle_btn = QPushButton(f"  ▾  {title}")
+        self.toggle_btn.setObjectName("sectionHeader")
+        self.toggle_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.toggle_btn.clicked.connect(self._toggle)
+        self.content = QWidget()
+        self.content_layout = QVBoxLayout(self.content)
+        self.content_layout.setContentsMargins(12, 8, 12, 12)
+        self.content_layout.setSpacing(8)
+        lay.addWidget(self.toggle_btn)
+        lay.addWidget(self.content)
+
+    def _toggle(self):
+        self._is_collapsed = not self._is_collapsed
+        self.content.setVisible(not self._is_collapsed)
+        arrow = "▸" if self._is_collapsed else "▾"
+        self.toggle_btn.setText(f"  {arrow}  {self._title}")
+
+    def addWidget(self, widget):
+        self.content_layout.addWidget(widget)
+
+    def addLayout(self, layout):
+        self.content_layout.addLayout(layout)
+
 class SettingsDialog(QDialog):
     def __init__(self, parent=None, current_settings=None):
         super().__init__(parent) # type: ignore
@@ -239,7 +272,7 @@ class SettingsDialog(QDialog):
         form.addRow("Hizalama:", self.combo_align)
         layout.addLayout(form)
 
-        lbl_dev = QLabel('Geliştirici: <a href="https://github.com/Sefflex" style="color: #3498db; text-decoration: none;">Sefflex</a> | v0.7')
+        lbl_dev = QLabel('Geliştirici: <a href="https://github.com/Sefflex" style="color: #a78bfa; text-decoration: none;">Sefflex</a> | v0.7')
         lbl_dev.setOpenExternalLinks(True)
         lbl_dev.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(lbl_dev)
@@ -247,7 +280,7 @@ class SettingsDialog(QDialog):
         btns = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         btns.accepted.connect(self.accept); btns.rejected.connect(self.reject)
         layout.addWidget(btns)
-        self.setStyleSheet("QDialog { background-color: #2b2b2b; color: #ececec; } QWidget { color: #ececec; background-color: #2b2b2b; } QLineEdit, QComboBox { background-color: #1e1e1e; border: 1px solid #555; padding: 4px; border-radius: 4px; } QPushButton { background-color: #3f4244; padding: 6px; border: 1px solid #555; }")
+        self.setStyleSheet("QDialog { background-color: #16181d; color: #f0f0f0; } QWidget { color: #f0f0f0; background-color: #16181d; } QLineEdit, QComboBox { background-color: #12141a; border: 1px solid #2a2d35; padding: 8px; border-radius: 10px; color: #f0f0f0; } QComboBox::drop-down { border: none; } QComboBox QAbstractItemView { background-color: #16181d; border: 1px solid #2a2d35; selection-background-color: #6c5ce7; color: #f0f0f0; } QPushButton { background-color: #1c1f26; padding: 8px 16px; border: 1px solid #2a2d35; border-radius: 10px; color: #f0f0f0; } QPushButton:hover { background-color: #6c5ce7; border-color: #5b4bd6; } QLabel { background-color: transparent; }")
     def get_settings(self) -> dict: return {"engine": self.combo_engine.currentText(),"api_key": self.txt_api.text().strip(),"font": self.combo_font.currentText(),"align": self.combo_align.currentText()}
 
 class AutoScanlationThread(QThread):
@@ -379,7 +412,7 @@ class CanvasView(QGraphicsView):
                     if 0 <= ix < qim.width() and 0 <= iy < qim.height():
                         color = qim.pixelColor(ix, iy)
                         self.brush_color = color
-                        self.main_app.lbl_current_color.setStyleSheet(f"background-color: {color.name()}; border: 1px solid gray;")
+                        self.main_app.lbl_current_color.setStyleSheet(f"background-color: {color.name()}; border: 2px solid #2a2d35; border-radius: 12px;")
 
                         self.main_app.btn_picker.setChecked(False)
                         self.main_app.btn_paint.setChecked(True)
@@ -537,153 +570,281 @@ class CizgiArsivApp(QMainWindow):
 
     def setup_ui(self):
         central = QWidget()
+        central.setObjectName("centralWidget")
         self.setCentralWidget(central)
         main_layout = QVBoxLayout(central)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
 
-        tb = QHBoxLayout()
-        btn_load = QPushButton("🖼️ Resim/CBR Yükle")
+        # ═══════════════════ TOPBAR ═══════════════════
+        topbar = QWidget()
+        topbar.setObjectName("topbar")
+        topbar.setFixedHeight(52)
+        tb = QHBoxLayout(topbar)
+        tb.setContentsMargins(16, 0, 16, 0)
+        tb.setSpacing(8)
+
+        logo = QLabel("⬡ ComicEditör")
+        logo.setObjectName("logoLabel")
+
+        btn_load = QPushButton("� Yükle")
         btn_load.clicked.connect(self.load_files)
-        
+
         btn_load_proj = QPushButton("📥 Proje Aç")
-        btn_load_proj.setStyleSheet("background-color: #8e44ad; color: white; font-weight: bold;")
+        btn_load_proj.setObjectName("btnPrimary")
         btn_load_proj.clicked.connect(self.load_project)
-        
-        btn_save_proj = QPushButton("📤 Proje Kaydet")
-        btn_save_proj.setStyleSheet("background-color: #2980b9; color: white; font-weight: bold;")
+
+        btn_save_proj = QPushButton("📤 Kaydet")
+        btn_save_proj.setObjectName("btnSecondary")
         btn_save_proj.clicked.connect(self.save_project)
 
-        btn_analyze = QPushButton("🚀 Sayfayı Tam Otonom Çıkart")
-        btn_analyze.setStyleSheet("background-color: #d35400; color: white; font-weight: bold; padding: 6px 12px;")
+        btn_analyze = QPushButton("🚀 Tam Otonom Çıkart")
+        btn_analyze.setObjectName("btnHero")
         btn_analyze.clicked.connect(self.run_auto_scanlation)
 
-        self.btn_reset = QPushButton("🔄 Sayfayı Sıfırla")
-        self.btn_reset.setStyleSheet("background-color: #c0392b; color: white;")
-        self.btn_reset.clicked.connect(self.reset_current_page)
-
-        self.btn_add_text = QPushButton("➕ Yazı Kutusu Ekle")
-        self.btn_add_text.clicked.connect(self.add_manual_text)
-
-        self.btn_toggle = QPushButton("👁️ Orijinali Gör")
-        self.btn_toggle.clicked.connect(self.toggle_original_view)
-
-        btn_export = QPushButton("💾 PDF Olarak Çıkar")
+        btn_export = QPushButton("💾 PDF Çıkar")
         btn_export.clicked.connect(self.export_to_pdf)
-        btn_settings = QPushButton("⚙️ Ayarlar")
+
+        btn_settings = QPushButton("⚙️")
+        btn_settings.setObjectName("btnIcon")
+        btn_settings.setFixedSize(38, 38)
         btn_settings.clicked.connect(self.open_settings)
+
+        tb.addWidget(logo)
+        tb.addSpacing(20)
+        tb.addWidget(btn_load)
+        tb.addWidget(btn_load_proj)
+        tb.addWidget(btn_save_proj)
+        tb.addSpacing(12)
+        tb.addWidget(btn_analyze)
+        tb.addStretch()
+        tb.addWidget(btn_export)
+        tb.addWidget(btn_settings)
+        main_layout.addWidget(topbar)
+
+        # ═══════════════════ BODY ═══════════════════
+        body = QWidget()
+        body_layout = QHBoxLayout(body)
+        body_layout.setContentsMargins(8, 6, 8, 8)
+        body_layout.setSpacing(8)
+
+        # ─────── LEFT SIDEBAR ───────
+        sidebar = QWidget()
+        sidebar.setObjectName("sidebar")
+        sidebar.setFixedWidth(180)
+        sidebar_lay = QVBoxLayout(sidebar)
+        sidebar_lay.setContentsMargins(10, 12, 10, 12)
+        sidebar_lay.setSpacing(8)
+
+        lbl_pages = QLabel("SAYFALAR")
+        lbl_pages.setObjectName("sectionTitle")
+        lbl_pages.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.page_list = QListWidget()
+        self.page_list.setIconSize(QSize(100, 150))
+        self.page_list.itemClicked.connect(self.on_page_selected)
+
+        left_footer = QLabel('v0.8 · <a href="https://github.com/Sefflex" style="color: #6c5ce7; text-decoration: none;">Sefflex</a>')
+        left_footer.setOpenExternalLinks(True)
+        left_footer.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        left_footer.setObjectName("footerLabel")
+
+        sidebar_lay.addWidget(lbl_pages)
+        sidebar_lay.addWidget(self.page_list)
+        sidebar_lay.addWidget(left_footer)
+
+        # ─────── CENTER (Canvas + Toolbar) ───────
+        center = QWidget()
+        center_lay = QVBoxLayout(center)
+        center_lay.setContentsMargins(0, 0, 0, 0)
+        center_lay.setSpacing(6)
+
+        self.canvas = CanvasView(self)
+        center_lay.addWidget(self.canvas, 1)
+
+        toolbar = QWidget()
+        toolbar.setObjectName("toolStrip")
+        toolbar.setFixedHeight(44)
+        tool_lay = QHBoxLayout(toolbar)
+        tool_lay.setContentsMargins(12, 0, 12, 0)
+        tool_lay.setSpacing(6)
 
         self.btn_paint = QPushButton("🖌️ Fırça")
         self.btn_paint.setCheckable(True)
+        self.btn_paint.setObjectName("btnTool")
         self.btn_paint.clicked.connect(self.toggle_paint_mode)
 
         self.btn_fill = QPushButton("🔲 Kapla")
         self.btn_fill.setCheckable(True)
+        self.btn_fill.setObjectName("btnTool")
         self.btn_fill.clicked.connect(self.toggle_fill_mode)
 
         self.btn_picker = QPushButton("💧 Damlalık")
         self.btn_picker.setCheckable(True)
+        self.btn_picker.setObjectName("btnTool")
         self.btn_picker.clicked.connect(self.toggle_picker_mode)
 
         self.spin_brush = QSpinBox()
         self.spin_brush.setRange(2, 200)
         self.spin_brush.setValue(15)
+        self.spin_brush.setPrefix("⌀ ")
         self.spin_brush.valueChanged.connect(self.update_brush_size)
 
         self.lbl_current_color = QLabel()
-        self.lbl_current_color.setFixedSize(20, 20)
-        self.lbl_current_color.setStyleSheet("background-color: #ffffff; border: 1px solid gray;")
+        self.lbl_current_color.setFixedSize(24, 24)
+        self.lbl_current_color.setStyleSheet("background-color: #ffffff; border: 2px solid #2a2d35; border-radius: 12px;")
 
-        tb.addWidget(btn_load); tb.addWidget(btn_load_proj); tb.addWidget(btn_save_proj); tb.addWidget(btn_analyze); tb.addWidget(self.btn_reset); tb.addWidget(self.btn_add_text); tb.addWidget(self.btn_toggle); tb.addWidget(btn_export);
-        tb.addWidget(QLabel(" | ")); tb.addWidget(self.btn_paint); tb.addWidget(self.btn_fill); tb.addWidget(self.btn_picker); tb.addWidget(QLabel("Boyut:")); tb.addWidget(self.spin_brush); tb.addWidget(self.lbl_current_color)
-        tb.addStretch(); tb.addWidget(btn_settings)
-        main_layout.addLayout(tb)
+        self.btn_reset = QPushButton("🔄 Sıfırla")
+        self.btn_reset.setObjectName("btnDanger")
+        self.btn_reset.clicked.connect(self.reset_current_page)
 
-        splitter = QSplitter(Qt.Orientation.Horizontal)
-        main_layout.addWidget(splitter)
+        self.btn_add_text = QPushButton("➕ Yazı Ekle")
+        self.btn_add_text.clicked.connect(self.add_manual_text)
 
-        left = QWidget(); left_lay = QVBoxLayout(left); left_lay.setContentsMargins(0, 0, 0, 0)
-        lbl_pages = QLabel("Sayfalar"); lbl_pages.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.page_list = QListWidget()
-        self.page_list.setIconSize(QSize(100, 150)); self.page_list.itemClicked.connect(self.on_page_selected)
-        left_lay.addWidget(lbl_pages); left_lay.addWidget(self.page_list)
+        self.btn_toggle = QPushButton("👁️ Orijinali Gör")
+        self.btn_toggle.clicked.connect(self.toggle_original_view)
 
-        left_footer = QLabel('v0.5 | <a href="https://github.com/Sefflex" style="color: #3498db; text-decoration: none;">Sefflex</a>')
-        left_footer.setOpenExternalLinks(True)
-        left_footer.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        left_lay.addWidget(left_footer)
+        tool_lay.addWidget(self.btn_paint)
+        tool_lay.addWidget(self.btn_fill)
+        tool_lay.addWidget(self.btn_picker)
+        tool_lay.addWidget(QLabel("│"))
+        tool_lay.addWidget(self.spin_brush)
+        tool_lay.addWidget(self.lbl_current_color)
+        tool_lay.addStretch()
+        tool_lay.addWidget(self.btn_add_text)
+        tool_lay.addWidget(self.btn_toggle)
+        tool_lay.addWidget(self.btn_reset)
 
-        mid = QFrame(); mid_lay = QVBoxLayout(mid)
-        self.canvas = CanvasView(self)
-        mid_lay.addWidget(self.canvas)
+        center_lay.addWidget(toolbar)
 
-        right = QWidget(); right_lay = QVBoxLayout(right); right_lay.setContentsMargins(10, 10, 10, 10)
-        lbl_edit = QLabel("Bireysel Hızlı Ayar Paneli\n(Sahnede Yazıya Tıklayın)"); lbl_edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        right_lay.addWidget(lbl_edit)
+        # ─────── RIGHT PROPERTIES PANEL ───────
+        right_scroll = QScrollArea()
+        right_scroll.setObjectName("propertiesScroll")
+        right_scroll.setWidgetResizable(True)
+        right_scroll.setFixedWidth(300)
+        right_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
-        self.txt_original = QTextEdit(); self.txt_original.setMinimumHeight(40)
+        right = QWidget()
+        right.setObjectName("propertiesPanel")
+        right_lay = QVBoxLayout(right)
+        right_lay.setContentsMargins(12, 12, 12, 12)
+        right_lay.setSpacing(6)
+
+        panel_title = QLabel("🎛️  ÖZELLİKLER")
+        panel_title.setObjectName("panelTitle")
+        right_lay.addWidget(panel_title)
+        right_lay.addSpacing(4)
+
+        # ── Section: Metin ──
+        sec_text = CollapsibleSection("📝  Metin")
+        lbl_orig = QLabel("Orijinal İbare:")
+        lbl_orig.setObjectName("fieldLabel")
+        self.txt_original = QTextEdit()
+        self.txt_original.setPlaceholderText("Orijinal metin...")
+        self.txt_original.setMinimumHeight(50)
+        self.txt_original.setMaximumHeight(80)
         self.txt_original.textChanged.connect(self.on_panel_changed)
-        self.txt_translated = QTextEdit(); self.txt_translated.setMinimumHeight(60)
+
+        lbl_tr = QLabel("Çeviri:")
+        lbl_tr.setObjectName("fieldLabel")
+        self.txt_translated = QTextEdit()
+        self.txt_translated.setPlaceholderText("Çeviri içeriği...")
+        self.txt_translated.setMinimumHeight(60)
+        self.txt_translated.setMaximumHeight(100)
         self.txt_translated.textChanged.connect(self.on_panel_changed)
 
-        form_r = QFormLayout()
-        self.spin_size = QSpinBox(); self.spin_size.setRange(8, 200)
-        self.spin_size.valueChanged.connect(self.on_panel_changed)
-        self.slider_width = QSlider(Qt.Orientation.Horizontal); self.slider_width.setRange(50, 800)
-        self.slider_width.valueChanged.connect(self.on_panel_changed)
-        self.slider_height = QSlider(Qt.Orientation.Horizontal); self.slider_height.setRange(50, 800)
-        self.slider_height.valueChanged.connect(self.on_panel_changed)
+        sec_text.addWidget(lbl_orig)
+        sec_text.addWidget(self.txt_original)
+        sec_text.addWidget(lbl_tr)
+        sec_text.addWidget(self.txt_translated)
+        right_lay.addWidget(sec_text)
 
-        self.btn_color_text = QPushButton("Siyah")
+        # ── Section: Stil ──
+        sec_style = CollapsibleSection("🎨  Stil")
+        style_form = QFormLayout()
+        style_form.setSpacing(10)
+        style_form.setContentsMargins(0, 0, 0, 0)
+
+        self.btn_color_text = QPushButton("  Siyah")
+        self.btn_color_text.setObjectName("colorBtn")
         self.btn_color_text.clicked.connect(self.choose_text_color)
-        self.btn_color_stroke = QPushButton("Beyaz")
+
+        self.btn_color_stroke = QPushButton("  Beyaz")
+        self.btn_color_stroke.setObjectName("colorBtn")
         self.btn_color_stroke.clicked.connect(self.choose_stroke_color)
 
-        self.chk_stroke = QCheckBox("Göster")
+        self.chk_stroke = QCheckBox("Dış Çizgi Göster")
         self.chk_stroke.setChecked(True)
         self.chk_stroke.stateChanged.connect(self.on_panel_changed)
-
-        stroke_lay = QHBoxLayout()
-        stroke_lay.setContentsMargins(0,0,0,0)
-        stroke_lay.addWidget(self.btn_color_stroke)
-        stroke_lay.addWidget(self.chk_stroke)
 
         self.chk_bold = QCheckBox("Kalın (Bold)")
         self.chk_bold.stateChanged.connect(self.on_panel_changed)
 
-        form_r.addRow("Yazı Rengi:", self.btn_color_text)
-        form_r.addRow("Dış Çizgi:", stroke_lay)
-        form_r.addRow("Stil:", self.chk_bold)
-        form_r.addRow("Font Boyutu:", self.spin_size)
-        form_r.addRow("Kutu Genişliği:", self.slider_width)
-        form_r.addRow("Kutu Yüksekliği:", self.slider_height)
+        style_form.addRow("Yazı Rengi:", self.btn_color_text)
+        style_form.addRow("Dış Çizgi:", self.btn_color_stroke)
+        sec_style.addLayout(style_form)
+        sec_style.addWidget(self.chk_stroke)
+        sec_style.addWidget(self.chk_bold)
+        right_lay.addWidget(sec_style)
 
-        right_lay.addWidget(QLabel("Orijinal İbare (Değiştirilebilir):")); right_lay.addWidget(self.txt_original)
-        right_lay.addWidget(QLabel("Çeviri İçeriği (Anlık Değişir):")); right_lay.addWidget(self.txt_translated)
-        right_lay.addLayout(form_r)
+        # ── Section: Boyut ──
+        sec_size = CollapsibleSection("📐  Boyut")
+        size_form = QFormLayout()
+        size_form.setSpacing(10)
+        size_form.setContentsMargins(0, 0, 0, 0)
 
+        self.spin_size = QSpinBox()
+        self.spin_size.setRange(8, 200)
+        self.spin_size.valueChanged.connect(self.on_panel_changed)
+
+        self.slider_width = QSlider(Qt.Orientation.Horizontal)
+        self.slider_width.setRange(50, 800)
+        self.slider_width.valueChanged.connect(self.on_panel_changed)
+
+        self.slider_height = QSlider(Qt.Orientation.Horizontal)
+        self.slider_height.setRange(50, 800)
+        self.slider_height.valueChanged.connect(self.on_panel_changed)
+
+        size_form.addRow("Font:", self.spin_size)
+        size_form.addRow("Genişlik:", self.slider_width)
+        size_form.addRow("Yükseklik:", self.slider_height)
+        sec_size.addLayout(size_form)
+        right_lay.addWidget(sec_size)
+
+        # ── Section: Araçlar ──
+        sec_tools = CollapsibleSection("🔧  Araçlar")
         self.btn_save_preset = QPushButton("💾 Ön Ayar Kaydet")
-        self.btn_save_preset.setStyleSheet("background-color: #8e44ad; color: white; font-weight: bold;")
+        self.btn_save_preset.setObjectName("btnPrimary")
         self.btn_save_preset.clicked.connect(self.save_text_preset)
-        right_lay.addWidget(self.btn_save_preset)
 
-        btn_tr = QPushButton("⭐ Sadece Metni Çevir (Seçili Kutu)")
-        btn_tr.setStyleSheet("background-color: #1e67b2; color: #ffffff;")
+        btn_tr = QPushButton("⭐ Sadece Metni Çevir")
+        btn_tr.setObjectName("btnSecondary")
         btn_tr.clicked.connect(self.translate_selected_node)
-        right_lay.addWidget(btn_tr)
 
         self.btn_ocr = QPushButton("🔍 Seçerek Oku && Yeni Kutu Ekle")
         self.btn_ocr.setCheckable(True)
-        self.btn_ocr.setStyleSheet("background-color: #27ae60; color: white; font-weight: bold;")
+        self.btn_ocr.setObjectName("btnSuccess")
         self.btn_ocr.clicked.connect(self.toggle_ocr_mode)
-        right_lay.addWidget(self.btn_ocr)
+
+        sec_tools.addWidget(self.btn_save_preset)
+        sec_tools.addWidget(btn_tr)
+        sec_tools.addWidget(self.btn_ocr)
+        right_lay.addWidget(sec_tools)
 
         right_lay.addStretch()
 
-        tip = QLabel("İpucu: Ekrandaki herhangi bir yazıyı farenizle sürükleyip istediğiniz yere bırakabilirsiniz. Çöpe atmak için Backspace'e basabilirsiniz.")
-        tip.setWordWrap(True); tip.setStyleSheet("color: #aaa; font-size: 11px;")
+        tip = QLabel("💡 Yazıları sürükleyin · Backspace ile silin · Ctrl+Z geri alın")
+        tip.setWordWrap(True)
+        tip.setObjectName("tipLabel")
         right_lay.addWidget(tip)
 
-        splitter.addWidget(left); splitter.addWidget(mid); splitter.addWidget(right)
-        splitter.setSizes([200, 850, 350])
+        right_scroll.setWidget(right)
+
+        # ═══════════════════ ASSEMBLE ═══════════════════
+        body_layout.addWidget(sidebar)
+        body_layout.addWidget(center, 1)
+        body_layout.addWidget(right_scroll)
+        main_layout.addWidget(body, 1)
 
     def open_settings(self):
         d = SettingsDialog(self, self.settings)
@@ -932,8 +1093,8 @@ class CizgiArsivApp(QMainWindow):
         self.slider_height.setValue(int(node.box_h))
         self.chk_bold.setChecked(node.is_bold)
         self.chk_stroke.setChecked(getattr(node, 'has_stroke', True))
-        self.btn_color_text.setStyleSheet(f"background-color: rgb({node.text_color[0]},{node.text_color[1]},{node.text_color[2]}); color: white;")
-        self.btn_color_stroke.setStyleSheet(f"background-color: rgb({node.stroke_color[0]},{node.stroke_color[1]},{node.stroke_color[2]}); color: black;")
+        self.btn_color_text.setStyleSheet(f"background-color: rgb({node.text_color[0]},{node.text_color[1]},{node.text_color[2]}); color: white; border-radius: 10px; border: 1px solid #2a2d35; padding: 8px 12px;")
+        self.btn_color_stroke.setStyleSheet(f"background-color: rgb({node.stroke_color[0]},{node.stroke_color[1]},{node.stroke_color[2]}); color: black; border-radius: 10px; border: 1px solid #2a2d35; padding: 8px 12px;")
         self._is_updating_panel = False
 
     def on_panel_changed(self):
@@ -977,7 +1138,7 @@ class CizgiArsivApp(QMainWindow):
                 if isinstance(item, DraggableTextNode): item.hide()
             page["is_showing_original"] = True
             self.btn_toggle.setText("👁️ Çeviriye Dön")
-            self.btn_toggle.setStyleSheet("background-color: #2ecc71; color: white; font-weight: bold;")
+            self.btn_toggle.setStyleSheet("background-color: #2ecc71; color: white; font-weight: bold; border: 1px solid #27ae60; border-radius: 10px;")
         else:
             page["bg_item"].setPixmap(page["clean_qpix"])
             for item in page["scene"].items():
@@ -1253,7 +1414,83 @@ class CizgiArsivApp(QMainWindow):
                 self.canvas.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
 
     def apply_dark_theme(self):
-        self.setStyleSheet("QMainWindow { background-color: #202020; } QWidget { color: #ececec; font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; } QPushButton { background-color: #3f4244; padding: 6px; border: 1px solid #555; border-radius: 4px; } QPushButton:hover { background-color: #4f5254; } QLineEdit { background-color: #1e1e1e; padding: 6px; } QListWidget, QTextEdit, QGraphicsView { background-color: #1a1a1a; border: 1px solid #444; }")
+        self.setStyleSheet("""
+            QMainWindow { background-color: #0f1115; }
+            QWidget { color: #f0f0f0; font-family: 'Segoe UI', 'Inter', sans-serif; font-size: 13px; background-color: transparent; }
+
+            #topbar { background-color: #16181d; border-bottom: 1px solid #2a2d35; }
+            #logoLabel { color: #f0f0f0; font-size: 17px; font-weight: bold; letter-spacing: 1px; }
+            #sidebar { background-color: #16181d; border: 1px solid #2a2d35; border-radius: 14px; }
+            #sectionTitle { color: #6b6e78; font-size: 11px; font-weight: bold; letter-spacing: 2px; }
+            #footerLabel { color: #4a4d56; font-size: 11px; }
+            #toolStrip { background-color: #16181d; border: 1px solid #2a2d35; border-radius: 12px; }
+            #propertiesScroll { background-color: transparent; border: none; }
+            #propertiesPanel { background-color: #16181d; border: 1px solid #2a2d35; border-radius: 14px; }
+            #panelTitle { color: #6b6e78; font-size: 11px; font-weight: bold; letter-spacing: 2px; }
+            #fieldLabel { color: #8b8e96; font-size: 12px; margin-top: 2px; }
+            #tipLabel { color: #4a4d56; font-size: 11px; padding: 8px 4px; }
+            QPushButton { background-color: #1c1f26; padding: 8px 14px; border: 1px solid #2a2d35; border-radius: 10px; color: #f0f0f0; font-size: 12px; }
+            QPushButton:hover { background-color: #252830; border-color: #3a3d45; }
+            QPushButton:pressed { background-color: #6c5ce7; border-color: #5b4bd6; }
+            QPushButton:checked { background-color: #6c5ce7; border-color: #5b4bd6; color: white; }
+            #btnPrimary { background-color: #6c5ce7; border: 1px solid #5b4bd6; color: white; font-weight: bold; }
+            #btnPrimary:hover { background-color: #7c6ef7; border-color: #6c5ce7; }
+            #btnSecondary { background-color: #1c1f26; border: 1px solid #4ea8de; color: #4ea8de; }
+            #btnSecondary:hover { background-color: #4ea8de; color: white; border-color: #4ea8de; }
+            #btnHero { background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #6c5ce7, stop:1 #4ea8de); border: none; color: white; font-weight: bold; padding: 8px 20px; }
+            #btnHero:hover { background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #7c6ef7, stop:1 #5eb8ee); }
+            #btnDanger { background-color: #1c1f26; border: 1px solid #e74c3c; color: #e74c3c; }
+            #btnDanger:hover { background-color: #e74c3c; color: white; }
+            #btnSuccess { background-color: #1c1f26; border: 1px solid #2ecc71; color: #2ecc71; font-weight: bold; }
+            #btnSuccess:hover { background-color: #2ecc71; color: white; }
+            #btnIcon { background-color: transparent; border: 1px solid #2a2d35; border-radius: 10px; font-size: 16px; padding: 0px; }
+            #btnIcon:hover { background-color: #252830; border-color: #6c5ce7; }
+            #btnTool { padding: 6px 12px; font-size: 12px; }
+            #colorBtn { text-align: left; padding: 8px 12px; }
+            #sectionHeader { background-color: transparent; border: none; border-bottom: 1px solid #2a2d35; border-radius: 0px; text-align: left; padding: 10px 12px; font-weight: bold; font-size: 12px; color: #f0f0f0; }
+            #sectionHeader:hover { background-color: #1c1f26; color: #6c5ce7; }
+            QLineEdit { background-color: #12141a; padding: 8px; border: 1px solid #2a2d35; border-radius: 10px; color: #f0f0f0; selection-background-color: #6c5ce7; }
+            QLineEdit:focus { border-color: #6c5ce7; }
+            QTextEdit { background-color: #12141a; border: 1px solid #2a2d35; border-radius: 10px; color: #f0f0f0; padding: 8px; selection-background-color: #6c5ce7; }
+            QTextEdit:focus { border-color: #6c5ce7; }
+            QSpinBox { background-color: #12141a; border: 1px solid #2a2d35; border-radius: 10px; padding: 6px 10px; color: #f0f0f0; }
+            QSpinBox:focus { border-color: #6c5ce7; }
+            QSpinBox::up-button, QSpinBox::down-button { background-color: #1c1f26; border: none; width: 20px; border-radius: 5px; }
+            QSpinBox::up-button:hover, QSpinBox::down-button:hover { background-color: #6c5ce7; }
+            QComboBox { background-color: #12141a; border: 1px solid #2a2d35; border-radius: 10px; padding: 6px 12px; color: #f0f0f0; }
+            QComboBox::drop-down { border: none; width: 24px; }
+            QComboBox QAbstractItemView { background-color: #16181d; border: 1px solid #2a2d35; selection-background-color: #6c5ce7; color: #f0f0f0; }
+            QListWidget { background-color: #12141a; border: 1px solid #2a2d35; border-radius: 10px; padding: 4px; outline: none; }
+            QListWidget::item { padding: 6px; border-radius: 8px; margin: 2px; color: #f0f0f0; }
+            QListWidget::item:hover { background-color: #1c1f26; }
+            QListWidget::item:selected { background-color: #6c5ce7; color: white; }
+            QGraphicsView { background-color: #0a0c10; border: 1px solid #2a2d35; border-radius: 12px; }
+            QSlider::groove:horizontal { border: none; height: 4px; background: #1c1f26; border-radius: 2px; }
+            QSlider::handle:horizontal { background: #6c5ce7; border: none; width: 14px; height: 14px; margin: -5px 0; border-radius: 7px; }
+            QSlider::handle:horizontal:hover { background: #7c6ef7; }
+            QSlider::sub-page:horizontal { background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #6c5ce7, stop:1 #4ea8de); border-radius: 2px; }
+            QCheckBox { spacing: 8px; color: #f0f0f0; }
+            QCheckBox::indicator { width: 18px; height: 18px; border-radius: 5px; border: 2px solid #2a2d35; background-color: #12141a; }
+            QCheckBox::indicator:hover { border-color: #6c5ce7; }
+            QCheckBox::indicator:checked { background-color: #6c5ce7; border-color: #5b4bd6; }
+            QLabel { color: #8b8e96; background-color: transparent; }
+            QFrame { background-color: #16181d; border: 1px solid #2a2d35; border-radius: 14px; }
+            QProgressDialog { background-color: #16181d; color: #f0f0f0; }
+            QProgressBar { border: 1px solid #2a2d35; border-radius: 6px; background-color: #12141a; text-align: center; color: #f0f0f0; }
+            QProgressBar::chunk { background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #6c5ce7, stop:1 #4ea8de); border-radius: 5px; }
+            QMessageBox { background-color: #16181d; color: #f0f0f0; }
+            QMessageBox QLabel { color: #f0f0f0; }
+            QMessageBox QPushButton { min-width: 80px; }
+            QScrollBar:vertical { background: transparent; width: 6px; border: none; }
+            QScrollBar::handle:vertical { background: #2a2d35; min-height: 30px; border-radius: 3px; }
+            QScrollBar::handle:vertical:hover { background: #6c5ce7; }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }
+            QScrollBar:horizontal { background: transparent; height: 6px; border: none; }
+            QScrollBar::handle:horizontal { background: #2a2d35; min-width: 30px; border-radius: 3px; }
+            QScrollBar::handle:horizontal:hover { background: #6c5ce7; }
+            QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width: 0px; }
+            QToolTip { background-color: #1c1f26; border: 1px solid #6c5ce7; border-radius: 8px; color: #f0f0f0; padding: 6px 10px; }
+        """)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
