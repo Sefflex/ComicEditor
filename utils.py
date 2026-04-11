@@ -30,7 +30,7 @@ else:
 def get_font_path(font_name: str) -> str:
     """Verilen font adına göre dosya yolunu döndürür."""
     if "Anime Ace" in font_name:
-        return os.path.join(base_dir, "fonts", "animeace.ttf")
+        return os.path.join(base_dir, "fonts", "KOMIKAX_.ttf")
     if "Patrick Hand" in font_name:
         return os.path.join(base_dir, "fonts", "PatrickHand.ttf")
     if "Comic Neue" in font_name:

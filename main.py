@@ -57,7 +57,7 @@ class CizgiArsivApp(QMainWindow):
         self.settings: dict = {
             "engine": "Otomatik (Gemini > Google)",
             "api_key": "",
-            "font": "Anime Ace (Manga)",
+            "font": "Anime Ace TR (Tam Türkçe)",
             "align": "Orta",
         }
 
@@ -653,7 +653,7 @@ class CizgiArsivApp(QMainWindow):
             self.active_node = None
             self.clear_right_panel()
 
-            fpath = get_font_path(str(self.settings.get("font", "Anime Ace")))
+            fpath = get_font_path(str(self.settings.get("font", "Anime Ace TR")))
 
             for p_data in project_data.get("pages", []):
                 qpix = self.bytes_to_pixmap(p_data["qpix"])
@@ -876,7 +876,7 @@ class CizgiArsivApp(QMainWindow):
         }
         global_font = 26
 
-        fpath = get_font_path(str(self.settings.get("font", "Anime Ace")))
+        fpath = get_font_path(str(self.settings.get("font", "Anime Ace TR")))
         align_str = str(self.settings.get("align", "Orta")).lower()
         align_pil = "center" if align_str == "orta" else "right" if align_str == "sağ" else "left"
 
@@ -955,7 +955,7 @@ class CizgiArsivApp(QMainWindow):
         if global_font < 14:
             global_font = 14
 
-        fpath = get_font_path(str(self.settings.get("font", "Anime Ace")))
+        fpath = get_font_path(str(self.settings.get("font", "Anime Ace TR")))
         align_str = str(self.settings.get("align", "Orta")).lower()
         align_pil = "center" if align_str == "orta" else "right" if align_str == "sağ" else "left"
 
@@ -1032,7 +1032,7 @@ class CizgiArsivApp(QMainWindow):
         if global_font < 14:
             global_font = 14
 
-        fpath = get_font_path(str(self.settings.get("font", "Anime Ace")))
+        fpath = get_font_path(str(self.settings.get("font", "Anime Ace TR")))
         align_str = str(self.settings.get("align", "Orta")).lower()
         align_pil = "center" if align_str == "orta" else "right" if align_str == "sağ" else "left"
 

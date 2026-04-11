@@ -89,7 +89,7 @@ class SettingsDialog(QDialog):
 
         self.combo_font = QComboBox()
         fonts = [
-            "Anime Ace (Manga)",
+            "Anime Ace TR (Tam Türkçe)",
             "Patrick Hand (Tam Türkçe Destekli)",
             "Comic Neue Bold (Klasik)",
             "Arial", "Comic Sans MS", "Impact"
