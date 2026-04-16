@@ -67,8 +67,9 @@ QWidget {
 }
 
 #logoIcon {
-    border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 0px;
+    border: none;
+    background-color: transparent;
 }
 
 #logoLabel {
@@ -94,14 +95,14 @@ QWidget {
 }
 
 #sectionTitle {
-    color: #555860;
-    font-size: 11px;
+    color: #6b7080;
+    font-size: 10px;
     font-weight: bold;
-    letter-spacing: 3px;
+    letter-spacing: 3.5px;
 }
 
 #footerLabel {
-    color: #3d4150;
+    color: #50566a;
     font-size: 11px;
 }
 
@@ -154,10 +155,13 @@ QWidget {
 }
 
 #tipLabel {
-    color: #3d4150;
+    color: #484d5e;
     font-size: 11px;
-    padding: 10px 6px;
+    padding: 10px 12px;
     font-style: italic;
+    background-color: rgba(255,255,255,0.012);
+    border: 1px solid rgba(255,255,255,0.03);
+    border-radius: 10px;
 }
 
 
@@ -503,7 +507,7 @@ QListWidget::item:selected {
 
 QGraphicsView {
     background-color: #08090d;
-    border: 1px solid rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
     border-radius: 16px;
 }
 
@@ -705,6 +709,45 @@ QToolTip {
     color: #e8eaed;
     padding: 8px 14px;
     font-size: 12px;
+}
+
+
+/* ══════════════════════════════════════════════════
+   TOPBAR DİKEY AYIRICI
+   Buton grupları arasında yarı-saydam çizgi
+   ══════════════════════════════════════════════════ */
+
+#topbarSep {
+    background: rgba(255,255,255,0.07);
+    border-radius: 1px;
+}
+
+
+/* ══════════════════════════════════════════════════
+   SAYFA SAYACI BADGE
+   Mor tonlu, hap şeklinde küçük etiket
+   ══════════════════════════════════════════════════ */
+
+#pageCountBadge {
+    background-color: rgba(124,108,247,0.14);
+    color: #9d8fff;
+    font-size: 10px;
+    font-weight: bold;
+    border: 1px solid rgba(124,108,247,0.24);
+    border-radius: 9px;
+    padding: 1px 7px;
+    min-width: 18px;
+}
+
+
+/* ══════════════════════════════════════════════════
+   SIDEBAR BAŞLIK CONTAINER
+   Badge ile birlikte transparan zemin
+   ══════════════════════════════════════════════════ */
+
+#sidebarTitleRow {
+    background-color: transparent;
+    border: none;
 }
 
 """

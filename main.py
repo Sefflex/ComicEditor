@@ -64,7 +64,9 @@ class CizgiArsivApp(QMainWindow):
         self._is_updating_panel = False
 
         # ── Uygulama İkonu ──
-        icon_path = os.path.join(base_dir, "icon.jpg")
+        icon_path = os.path.join(base_dir, "cizgi.png")
+        if not os.path.exists(icon_path):
+            icon_path = os.path.join(base_dir, "icon.jpg")
         if os.path.exists(icon_path):
             self.setWindowIcon(QIcon(icon_path))
 
@@ -128,14 +130,16 @@ class CizgiArsivApp(QMainWindow):
         logo_layout.setContentsMargins(0, 0, 0, 0)
         logo_layout.setSpacing(8)
         logo_icon = QLabel()
-        icon_path = os.path.join(base_dir, "icon.jpg")
-        if os.path.exists(icon_path):
-            logo_pix = QPixmap(icon_path).scaled(
-                32, 32, Qt.AspectRatioMode.KeepAspectRatio,
+        logo_img_path = os.path.join(base_dir, "cizgi.png")
+        if not os.path.exists(logo_img_path):
+            logo_img_path = os.path.join(base_dir, "icon.jpg")
+        if os.path.exists(logo_img_path):
+            logo_pix = QPixmap(logo_img_path).scaled(
+                36, 36, Qt.AspectRatioMode.KeepAspectRatio,
                 Qt.TransformationMode.SmoothTransformation
             )
             logo_icon.setPixmap(logo_pix)
-        logo_icon.setFixedSize(34, 34)
+        logo_icon.setFixedSize(38, 38)
         logo_icon.setObjectName("logoIcon")
         logo_text = QLabel("ComicEditör")
         logo_text.setObjectName("logoLabel")
@@ -145,37 +149,54 @@ class CizgiArsivApp(QMainWindow):
         logo_widget.setLayout(logo_layout)
 
         btn_load = QPushButton("📂 Yükle")
+        btn_load.setToolTip("Resim, PDF veya CBZ/CBR dosyaları yükle")
         btn_load.clicked.connect(self.load_files)
 
         btn_load_proj = GlowButton("📥 Proje Aç", glow_color=QColor(124, 108, 247, 60))
         btn_load_proj.setObjectName("btnPrimary")
+        btn_load_proj.setToolTip("Kayıtlı .comicproj projesini aç")
         btn_load_proj.clicked.connect(self.load_project)
 
         btn_save_proj = QPushButton("📤 Kaydet")
         btn_save_proj.setObjectName("btnSecondary")
+        btn_save_proj.setToolTip("Çalışmayı .comicproj olarak kaydet")
         btn_save_proj.clicked.connect(self.save_project)
 
         btn_analyze = GlowButton("🚀 Tam Otonom Çıkart",
                                  glow_color=QColor(124, 108, 247, 80), glow_radius=28)
         btn_analyze.setObjectName("btnHero")
+        btn_analyze.setToolTip("Yapay zeka ile sayfayı otomatik işle: OCR, çeviri ve yazı yerleştirme")
         btn_analyze.clicked.connect(self.run_auto_scanlation)
 
         btn_export = QPushButton("💾 PDF Çıkar")
+        btn_export.setToolTip("Tüm sayfaları PDF olarak dışa aktar")
         btn_export.clicked.connect(self.export_to_pdf)
 
         btn_settings = QPushButton("⚙️")
         btn_settings.setObjectName("btnIcon")
         btn_settings.setFixedSize(40, 40)
+        btn_settings.setToolTip("Çeviri motoru, font ve hizalama ayarları")
         btn_settings.clicked.connect(self.open_settings)
 
+        def _make_sep():
+            s = QWidget()
+            s.setObjectName("topbarSep")
+            s.setFixedSize(1, 28)
+            return s
+
         tb.addWidget(logo_widget)
-        tb.addSpacing(24)
+        tb.addWidget(_make_sep())
+        tb.addSpacing(8)
         tb.addWidget(btn_load)
         tb.addWidget(btn_load_proj)
         tb.addWidget(btn_save_proj)
-        tb.addSpacing(16)
+        tb.addSpacing(8)
+        tb.addWidget(_make_sep())
+        tb.addSpacing(8)
         tb.addWidget(btn_analyze)
         tb.addStretch()
+        tb.addWidget(_make_sep())
+        tb.addSpacing(8)
         tb.addWidget(btn_export)
         tb.addWidget(btn_settings)
         main_layout.addWidget(topbar)
@@ -194,9 +215,22 @@ class CizgiArsivApp(QMainWindow):
         sidebar_lay.setContentsMargins(14, 16, 14, 16)  # Ferah iç padding
         sidebar_lay.setSpacing(10)
 
+        title_container = QWidget()
+        title_container.setObjectName("sidebarTitleRow")
+        title_row = QHBoxLayout(title_container)
+        title_row.setContentsMargins(0, 4, 0, 4)
+        title_row.setSpacing(6)
         lbl_pages = QLabel("SAYFALAR")
         lbl_pages.setObjectName("sectionTitle")
-        lbl_pages.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.lbl_page_count = QLabel("0")
+        self.lbl_page_count.setObjectName("pageCountBadge")
+        self.lbl_page_count.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.lbl_page_count.setFixedHeight(18)
+        self.lbl_page_count.setMinimumWidth(20)
+        title_row.addStretch()
+        title_row.addWidget(lbl_pages)
+        title_row.addWidget(self.lbl_page_count)
+        title_row.addStretch()
 
         self.page_list = QListWidget()
         self.page_list.setIconSize(QSize(100, 150))
@@ -210,7 +244,7 @@ class CizgiArsivApp(QMainWindow):
         left_footer.setAlignment(Qt.AlignmentFlag.AlignCenter)
         left_footer.setObjectName("footerLabel")
 
-        sidebar_lay.addWidget(lbl_pages)
+        sidebar_lay.addWidget(title_container)
         sidebar_lay.addWidget(self.page_list)
         sidebar_lay.addWidget(left_footer)
 
@@ -246,8 +280,9 @@ class CizgiArsivApp(QMainWindow):
         self.btn_picker.setObjectName("btnTool")
         self.btn_picker.clicked.connect(self.toggle_picker_mode)
 
-        sep_label = QLabel("│")
-        sep_label.setStyleSheet("color: rgba(255,255,255,0.08); font-size: 18px;")
+        sep_label = QWidget()
+        sep_label.setObjectName("topbarSep")
+        sep_label.setFixedSize(1, 24)
 
         self.spin_brush = QSpinBox()
         self.spin_brush.setRange(2, 200)
@@ -549,6 +584,7 @@ class CizgiArsivApp(QMainWindow):
         item = QListWidgetItem(QIcon(thumb), title)
         item.setData(Qt.ItemDataRole.UserRole, len(self.pages) - 1)
         self.page_list.addItem(item)
+        self.lbl_page_count.setText(str(len(self.pages)))
         if len(self.pages) == 1:
             self.on_page_selected(item)
 
@@ -693,6 +729,7 @@ class CizgiArsivApp(QMainWindow):
                     node.setPos(nd["pos_x"], nd["pos_y"])
                     scene.addItem(node)
 
+            self.lbl_page_count.setText(str(len(self.pages)))
             if len(self.pages) > 0:
                 self.on_page_selected(self.page_list.item(0))
 
