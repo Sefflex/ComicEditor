@@ -7,9 +7,11 @@ import sys
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
 # easyocr model ve veri dosyaları
-easyocr_datas   = collect_data_files("easyocr")
+easyocr_datas    = collect_data_files("easyocr")
 # deep_translator
 translator_datas = collect_data_files("deep_translator")
+# scipy veri dosyaları
+scipy_datas      = collect_data_files("scipy")
 
 block_cipher = None
 
@@ -23,13 +25,24 @@ a = Analysis(
         ("icon.jpg",        "."),
         ("fonts",           "fonts"),
         ("unrar_windows",   "unrar_windows"),
-        # easyocr ve deep_translator verileri
+        # easyocr, deep_translator ve scipy verileri
         *easyocr_datas,
         *translator_datas,
+        *scipy_datas,
     ],
     hiddenimports=[
         # easyocr içindeki dinamik yüklemeler
         *collect_submodules("easyocr"),
+        # scipy — easyocr bağımlılığı
+        "scipy",
+        "scipy.ndimage",
+        "scipy.signal",
+        "scipy.special",
+        "scipy.io",
+        "scipy.stats",
+        "scipy.fft",
+        "scipy.linalg",
+        *collect_submodules("scipy"),
         # cv2 / numpy
         "cv2",
         "numpy",
@@ -61,7 +74,6 @@ a = Analysis(
     excludes=[
         "tkinter",
         "matplotlib",
-        "scipy",
         "IPython",
         "notebook",
         "jupyter",

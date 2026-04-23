@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+
+  <Package Name="Comic Editor"
+           Manufacturer="CizgiArsiv"
+           Version="1.0.0"
+           UpgradeCode="F47AC10B-58CC-4372-A567-0E02B2C3D479"
+           Language="1055"
+           Scope="perMachine">
+
+    <MajorUpgrade DowngradeErrorMessage="Bu uygulamanin daha yeni bir surumu zaten yuklu." />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <StandardDirectory Id="ProgramFiles6432Folder">
+      <Directory Id="INSTALLFOLDER" Name="Comic Editor" />
+    </StandardDirectory>
+
+    <StandardDirectory Id="DesktopFolder" />
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ApplicationProgramsFolder" Name="Comic Editor" />
+    </StandardDirectory>
+
+    <ComponentGroup Id="DesktopShortcutGroup" Directory="DesktopFolder">
+      <Component Id="DesktopShortcutComp" Guid="*">
+        <Shortcut Id="DesktopShortcut"
+                  Name="Comic Editor"
+                  Target="[INSTALLFOLDER]ComicEditor.exe"
+                  WorkingDirectory="INSTALLFOLDER"
+                  Icon="AppIcon" />
+        <RegistryValue Root="HKCU"
+                       Key="Software\CizgiArsiv\ComicEditor"
+                       Name="DesktopInstalled"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id="StartMenuShortcutGroup" Directory="ApplicationProgramsFolder">
+      <Component Id="StartMenuShortcutComp" Guid="*">
+        <Shortcut Id="StartMenuShortcut"
+                  Name="Comic Editor"
+                  Target="[INSTALLFOLDER]ComicEditor.exe"
+                  WorkingDirectory="INSTALLFOLDER"
+                  Icon="AppIcon" />
+        <RemoveFolder Id="RemoveApplicationProgramsFolder"
+                      Directory="ApplicationProgramsFolder"
+                      On="uninstall" />
+        <RegistryValue Root="HKCU"
+                       Key="Software\CizgiArsiv\ComicEditor"
+                       Name="StartMenuInstalled"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <Icon Id="AppIcon" SourceFile="$(var.ProjectDir)cizgi.ico" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/Sefflex/ComicEditor" />
+
+    <Feature Id="ProductFeature" Title="Comic Editor" Level="1">
+      <ComponentGroupRef Id="ApplicationFiles" />
+      <ComponentGroupRef Id="DesktopShortcutGroup" />
+      <ComponentGroupRef Id="StartMenuShortcutGroup" />
+    </Feature>
+
+  </Package>
+</Wix>
